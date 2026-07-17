@@ -1028,11 +1028,12 @@ function EliteLib:CreateWindow(titleText, subtitleText)
                         onMessageDelete = nil, -- function(messageFrame)
                     }
 
-                    local function AddHook(name, func)
-                        if hooks[name] ~= nil then
-                            hooks[name] = func
-                        end
-                    end
+					local validHooks = { onMessageSend = true, onMessageEdit = true, onMessageDelete = true }
+					local function AddHook(name, func)
+					    if validHooks[name] then
+					        hooks[name] = func
+					    end
+					end
 
                     -- ==============================================================
                     -- SEND MESSAGE (Kullanıcı mesajını oluşturur ve hook'u çağırır)

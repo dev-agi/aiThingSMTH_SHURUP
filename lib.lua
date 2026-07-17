@@ -217,11 +217,6 @@ function EliteLib:CreateWindow(titleText, subtitleText)
 	task.spawn(function()
 		local GridBgTween = TweenService:Create(GridBg,GridBgTweenInfo,{Position = UDim2.new(0.25, 0, 0, 0)})
 		GridBgTween:Play()
-		--while ScreenGui and ScreenGui.Parent do
-		--	local GridBgTween = TweenService:Create(GridBg,GridBgTweenInfo,{Position = UDim2.new(1, 0, 0, 0)})
-		--	GridBgTween:Play()
-		--	GridBgTween.Completed:Wait()
-		--end
 	end)
 
 	local ScanlineFrame = Instance.new("Frame", MainFrame)
@@ -882,373 +877,270 @@ function EliteLib:CreateWindow(titleText, subtitleText)
 			return Panel
 		end
 
-        function Elements:AddChatClient(opts)
-            opts = opts or {}
-            local disableAI = opts.disableAI or false  -- AI otomatik cevap vermesin mi?
+                -- ==============================================================
+                -- CHAT CLIENT (UI + HOOK SİSTEMİ, AI MANTIĞI YOK)
+                -- ==============================================================
+                function Elements:AddChatClient()
+                    ScrollFrame:Destroy()
 
-            ScrollFrame:Destroy()
+                    local ChatScroll = Instance.new("ScrollingFrame", Page)
+                    ChatScroll.Size = UDim2.new(1, 0, 1, -62)
+                    ChatScroll.Position = UDim2.new(0, 0, 0, 0)
+                    ChatScroll.BackgroundTransparency = 1
+                    ChatScroll.BorderSizePixel = 0
+                    ChatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                    ChatScroll.ScrollBarThickness = 2
+                    ChatScroll.ScrollBarImageColor3 = C.Accent
 
-            local ChatScroll = Instance.new("ScrollingFrame", Page)
-            ChatScroll.Size = UDim2.new(1, 0, 1, -62)
-            ChatScroll.Position = UDim2.new(0, 0, 0, 0)
-            ChatScroll.BackgroundTransparency = 1
-            ChatScroll.BorderSizePixel = 0
-            ChatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-            ChatScroll.ScrollBarThickness = 2
-            ChatScroll.ScrollBarImageColor3 = C.Accent
+                    local ChatPadding = Instance.new("UIPadding", ChatScroll)
+                    ChatPadding.PaddingLeft = UDim.new(0, 6)
+                    ChatPadding.PaddingRight = UDim.new(0, 6)
+                    ChatPadding.PaddingTop = UDim.new(0, 6)
 
-            local ChatPadding = Instance.new("UIPadding", ChatScroll)
-            ChatPadding.PaddingLeft = UDim.new(0, 6)
-            ChatPadding.PaddingRight = UDim.new(0, 6)
-            ChatPadding.PaddingTop = UDim.new(0, 6)
-
-            local ChatLayout = Instance.new("UIListLayout", ChatScroll)
-            ChatLayout.Padding = UDim.new(0, 10)
-            ChatLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 16)
-                TweenService:Create(ChatScroll, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { CanvasPosition = Vector2.new(0, ChatLayout.AbsoluteContentSize.Y + 100) }):Play()
-            end)
-
-            local InputWrap = Instance.new("Frame", Page)
-            InputWrap.Size = UDim2.new(1, 0, 0, 52)
-            InputWrap.Position = UDim2.new(0, 0, 1, -56)
-            InputWrap.BackgroundColor3 = C.Surface
-            InputWrap.BorderSizePixel = 0
-            Instance.new("UICorner", InputWrap).CornerRadius = UDim.new(0, 10)
-            local InputStroke = Instance.new("UIStroke", InputWrap)
-            InputStroke.Color = C.Outline
-
-            local TextBox = Instance.new("TextBox", InputWrap)
-            TextBox.Size = UDim2.new(1, -54, 1, -12)
-            TextBox.Position = UDim2.new(0, 12, 0, 6)
-            TextBox.BackgroundTransparency = 1
-            TextBox.Font = C.Font
-            TextBox.PlaceholderText = ">> type a message..."
-            TextBox.PlaceholderColor3 = C.Muted
-            TextBox.Text = ""
-            TextBox.TextColor3 = C.Text
-            TextBox.TextSize = Config.ChatTextSize
-            TextBox.TextXAlignment = Enum.TextXAlignment.Left
-            TextBox.ClearTextOnFocus = false
-
-            local SendBtn = Instance.new("TextButton", InputWrap)
-            SendBtn.Size = UDim2.new(0, 36, 0, 36)
-            SendBtn.Position = UDim2.new(1, -44, 0.5, -18)
-            SendBtn.BackgroundColor3 = C.Accent
-            SendBtn.Text = "↑"
-            SendBtn.Font = C.FontBold
-            SendBtn.TextSize = 18
-            SendBtn.TextColor3 = C.Bg
-            SendBtn.BorderSizePixel = 0
-            Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 8)
-
-            TextBox.Focused:Connect(function()
-                TweenService:Create(InputStroke, TweenInfo.new(0.15), { Color = C.Accent }):Play()
-            end)
-            TextBox.FocusLost:Connect(function()
-                TweenService:Create(InputStroke, TweenInfo.new(0.15), { Color = C.Outline }):Play()
-            end)
-
-            -- Mesaj oluşturma fonksiyonu (değişmedi)
-            local function CreateMessage(sender, text)
-                local isUser = sender == "User"
-                local maxWidth = math.min(ChatScroll.AbsoluteSize.X * 0.78, 360)
-                local textSize = TextService:GetTextSize(text, Config.ChatTextSize, C.Font, Vector2.new(maxWidth - 28, 9999))
-                local bubbleH = textSize.Y + 22
-                local bubbleW = math.max(math.min(textSize.X + 28, maxWidth), 48)
-
-                local Row = Instance.new("Frame", ChatScroll)
-                Row:SetAttribute("Sender", sender)
-                Row.Size = UDim2.new(1, 0, 0, bubbleH)
-                Row.BackgroundTransparency = 1
-
-                local Bubble = Instance.new("Frame", Row)
-                Bubble.Name = "ChatBubble"
-                Bubble.Size = UDim2.new(0, bubbleW, 0, bubbleH)
-                Bubble.BackgroundColor3 = isUser and C.Accent or C.Surface
-                Bubble.BorderSizePixel = 0
-                Bubble.BackgroundTransparency = 1
-                Instance.new("UICorner", Bubble).CornerRadius = UDim.new(0, 10)
-
-                if not isUser then
-                    local bs = Instance.new("UIStroke", Bubble)
-                    bs.Color = C.Accent
-                    bs.Thickness = 0.8
-                    bs.Transparency = 0.6
-                end
-
-                Bubble.Position = isUser
-                    and UDim2.new(1, -bubbleW, 0, 0)
-                    or UDim2.new(0, 0, 0, 0)
-
-                local Lbl = Instance.new("TextLabel", Bubble)
-                Lbl.Size = UDim2.new(1, -24, 1, -12)
-                Lbl.Position = UDim2.new(0, 12, 0, 6)
-                Lbl.BackgroundTransparency = 1
-                Lbl.Font = C.Font
-                Lbl.RichText = true
-                Lbl.TextColor3 = isUser and C.Bg or C.Text
-                Lbl.TextSize = Config.ChatTextSize
-                Lbl.TextWrapped = true
-                Lbl.TextXAlignment = isUser and Enum.TextXAlignment.Right or Enum.TextXAlignment.Left
-                Lbl.Text = ""
-
-                table.insert(WindowEngine.AllLabels, Lbl)
-
-                local slideStart = isUser
-                    and UDim2.new(1, 0, 0, 0)
-                    or UDim2.new(0, -30, 0, 0)
-                Bubble.Position = slideStart
-                Bubble.BackgroundTransparency = 1
-
-                TweenService:Create(Bubble, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    Position = isUser and UDim2.new(1, -bubbleW, 0, 0) or UDim2.new(0, 0, 0, 0),
-                    BackgroundTransparency = 0,
-                }):Play()
-
-                if not isUser and Config.TypewriterActive then
-                    task.spawn(function()
-                        task.wait(0.1)
-                        for i = 1, #text do
-                            Lbl.Text = string.sub(text, 1, i)
-                            task.wait(0.011)
-                        end
+                    local ChatLayout = Instance.new("UIListLayout", ChatScroll)
+                    ChatLayout.Padding = UDim.new(0, 10)
+                    ChatLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                        ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 16)
+                        TweenService:Create(ChatScroll, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { CanvasPosition = Vector2.new(0, ChatLayout.AbsoluteContentSize.Y + 100) }):Play()
                     end)
-                else
-                    Lbl.Text = text
-                    Lbl.TextTransparency = 1
-                    TweenService:Create(Lbl, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
-                end
-                return Row
-            end
 
-            -- ==============================================================
-            -- HOOK SİSTEMİ
-            -- ==============================================================
-            local hooks = {
-                onMessageSend = nil,   -- function(sender, text, messageFrame) -> dönen değerler mesajı değiştirebilir
-                onMessageEdit = nil,   -- function(messageFrame, newText, oldText) -> yeni metni değiştirebilir
-                onMessageDelete = nil, -- function(messageFrame)
-                onAIResponse = nil,    -- function(responseText, originalMessage) -> AI cevabı geldiğinde
-            }
+                    local InputWrap = Instance.new("Frame", Page)
+                    InputWrap.Size = UDim2.new(1, 0, 0, 52)
+                    InputWrap.Position = UDim2.new(0, 0, 1, -56)
+                    InputWrap.BackgroundColor3 = C.Surface
+                    InputWrap.BorderSizePixel = 0
+                    Instance.new("UICorner", InputWrap).CornerRadius = UDim.new(0, 10)
+                    local InputStroke = Instance.new("UIStroke", InputWrap)
+                    InputStroke.Color = C.Outline
 
-            -- Hook ekleme fonksiyonu
-            local function AddHook(name, func)
-                if hooks[name] ~= nil then
-                    hooks[name] = func
-                end
-            end
+                    local TextBox = Instance.new("TextBox", InputWrap)
+                    TextBox.Size = UDim2.new(1, -54, 1, -12)
+                    TextBox.Position = UDim2.new(0, 12, 0, 6)
+                    TextBox.BackgroundTransparency = 1
+                    TextBox.Font = C.Font
+                    TextBox.PlaceholderText = ">> type a message..."
+                    TextBox.PlaceholderColor3 = C.Muted
+                    TextBox.Text = ""
+                    TextBox.TextColor3 = C.Text
+                    TextBox.TextSize = Config.ChatTextSize
+                    TextBox.TextXAlignment = Enum.TextXAlignment.Left
+                    TextBox.ClearTextOnFocus = false
 
-            -- ==============================================================
-            -- SEND MESSAGE (güncellendi)
-            -- ==============================================================
-            local function SendMessage()
-                local msg = TextBox.Text
-                if msg == "" then return end
-                TextBox.Text = ""
+                    local SendBtn = Instance.new("TextButton", InputWrap)
+                    SendBtn.Size = UDim2.new(0, 36, 0, 36)
+                    SendBtn.Position = UDim2.new(1, -44, 0.5, -18)
+                    SendBtn.BackgroundColor3 = C.Accent
+                    SendBtn.Text = "↑"
+                    SendBtn.Font = C.FontBold
+                    SendBtn.TextSize = 18
+                    SendBtn.TextColor3 = C.Bg
+                    SendBtn.BorderSizePixel = 0
+                    Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 8)
 
-                -- Kullanıcı mesajını oluştur
-                local userMsg = CreateMessage("User", msg)
+                    TextBox.Focused:Connect(function()
+                        TweenService:Create(InputStroke, TweenInfo.new(0.15), { Color = C.Accent }):Play()
+                    end)
+                    TextBox.FocusLost:Connect(function()
+                        TweenService:Create(InputStroke, TweenInfo.new(0.15), { Color = C.Outline }):Play()
+                    end)
 
-                -- HOOK: onMessageSend (kullanıcı mesajı gönderildi)
-                if hooks.onMessageSend then
-                    local newMsg, newSender = hooks.onMessageSend("User", msg, userMsg)
-                    if newMsg then
-                        -- mesajı güncelle (ChatApi.EditMessage kullan)
-                        ChatApi.EditMessage(userMsg, newMsg)
+                    -- ==============================================================
+                    -- MESAJ OLUŞTURMA (CreateMessage)
+                    -- ==============================================================
+                    local function CreateMessage(sender, text)
+                        local isUser = sender == "User"
+                        local maxWidth = math.min(ChatScroll.AbsoluteSize.X * 0.78, 360)
+                        local textSize = TextService:GetTextSize(text, Config.ChatTextSize, C.Font, Vector2.new(maxWidth - 28, 9999))
+                        local bubbleH = textSize.Y + 22
+                        local bubbleW = math.max(math.min(textSize.X + 28, maxWidth), 48)
+
+                        local Row = Instance.new("Frame", ChatScroll)
+                        Row:SetAttribute("Sender", sender)
+                        Row.Size = UDim2.new(1, 0, 0, bubbleH)
+                        Row.BackgroundTransparency = 1
+
+                        local Bubble = Instance.new("Frame", Row)
+                        Bubble.Name = "ChatBubble"
+                        Bubble.Size = UDim2.new(0, bubbleW, 0, bubbleH)
+                        Bubble.BackgroundColor3 = isUser and C.Accent or C.Surface
+                        Bubble.BorderSizePixel = 0
+                        Bubble.BackgroundTransparency = 1
+                        Instance.new("UICorner", Bubble).CornerRadius = UDim.new(0, 10)
+
+                        if not isUser then
+                            local bs = Instance.new("UIStroke", Bubble)
+                            bs.Color = C.Accent
+                            bs.Thickness = 0.8
+                            bs.Transparency = 0.6
+                        end
+
+                        Bubble.Position = isUser
+                            and UDim2.new(1, -bubbleW, 0, 0)
+                            or UDim2.new(0, 0, 0, 0)
+
+                        local Lbl = Instance.new("TextLabel", Bubble)
+                        Lbl.Size = UDim2.new(1, -24, 1, -12)
+                        Lbl.Position = UDim2.new(0, 12, 0, 6)
+                        Lbl.BackgroundTransparency = 1
+                        Lbl.Font = C.Font
+                        Lbl.RichText = true
+                        Lbl.TextColor3 = isUser and C.Bg or C.Text
+                        Lbl.TextSize = Config.ChatTextSize
+                        Lbl.TextWrapped = true
+                        Lbl.TextXAlignment = isUser and Enum.TextXAlignment.Right or Enum.TextXAlignment.Left
+                        Lbl.Text = ""
+
+                        table.insert(WindowEngine.AllLabels, Lbl)
+
+                        local slideStart = isUser
+                            and UDim2.new(1, 0, 0, 0)
+                            or UDim2.new(0, -30, 0, 0)
+                        Bubble.Position = slideStart
+                        Bubble.BackgroundTransparency = 1
+
+                        TweenService:Create(Bubble, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                            Position = isUser and UDim2.new(1, -bubbleW, 0, 0) or UDim2.new(0, 0, 0, 0),
+                            BackgroundTransparency = 0,
+                        }):Play()
+
+                        if not isUser and Config.TypewriterActive then
+                            task.spawn(function()
+                                task.wait(0.1)
+                                for i = 1, #text do
+                                    Lbl.Text = string.sub(text, 1, i)
+                                    task.wait(0.011)
+                                end
+                            end)
+                        else
+                            Lbl.Text = text
+                            Lbl.TextTransparency = 1
+                            TweenService:Create(Lbl, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
+                        end
+                        return Row
                     end
-                end
 
-                -- Eğer AI otomatik cevap vermeyecekse veya disableAI true ise burada dur
-                if disableAI then
-                    return userMsg
-                end
-
-                -- AI placeholder mesajı
-                local aiMsg = CreateMessage("AI", "🤔 Düşünüyor...")
-
-                -- AI'den cevap al (önceki AI_CONFIG kullanılır)
-                task.spawn(function()
-                    local httpFunc = request or (syn and syn.request) or (http and http.request)
-                    if not httpFunc and HttpService and HttpService.RequestAsync then
-                        httpFunc = function(opts) return HttpService:RequestAsync(opts) end
-                    end
-
-                    if not httpFunc then
-                        ChatApi.EditMessage(aiMsg, "[HATA] HTTP isteği yapılamıyor.")
-                        return
-                    end
-
-                    local payload
-                    local headers = { ["Content-Type"] = "application/json" }
-
-                    if AI_CONFIG.Provider == "Ollama" then
-                        payload = {
-                            model = AI_CONFIG.Model,
-                            prompt = AI_CONFIG.SystemPrompt .. "\nKullanıcı: " .. msg .. "\nAsistan:",
-                            stream = false,
-                            options = { temperature = 0.7, num_predict = 512 }
-                        }
-                    elseif AI_CONFIG.Provider == "LMStudio" then
-                        payload = {
-                            model = AI_CONFIG.Model,
-                            messages = {
-                                { role = "system", content = AI_CONFIG.SystemPrompt },
-                                { role = "user", content = msg }
-                            },
-                            stream = false,
-                            temperature = 0.7,
-                            max_tokens = 512
-                        }
-                    else
-                        ChatApi.EditMessage(aiMsg, "[HATA] Geçersiz Provider: " .. tostring(AI_CONFIG.Provider))
-                        return
-                    end
-
-                    local options = {
-                        Url = AI_CONFIG.Endpoint,
-                        Method = "POST",
-                        Headers = headers,
-                        Body = HttpService:JSONEncode(payload)
+                    -- ==============================================================
+                    -- HOOK SİSTEMİ
+                    -- ==============================================================
+                    local hooks = {
+                        onMessageSend = nil,   -- function(messageFrame, text)
+                        onMessageEdit = nil,   -- function(messageFrame, newText, oldText) -> modified newText
+                        onMessageDelete = nil, -- function(messageFrame)
                     }
 
-                    local success, result = pcall(function() return httpFunc(options) end)
-
-                    if not success then
-                        ChatApi.EditMessage(aiMsg, "[HATA] Bağlantı başarısız: " .. tostring(result))
-                        return
-                    end
-
-                    local status = result.StatusCode or result.Status or 500
-                    if status ~= 200 then
-                        ChatApi.EditMessage(aiMsg, "[HTTP " .. tostring(status) .. "] " .. tostring(result.Body):sub(1, 150))
-                        return
-                    end
-
-                    local ok, data = pcall(HttpService.JSONDecode, HttpService, result.Body)
-                    if not ok then
-                        ChatApi.EditMessage(aiMsg, "[HATA] JSON hatası: " .. tostring(result.Body):sub(1, 100))
-                        return
-                    end
-
-                    local responseText = ""
-                    if AI_CONFIG.Provider == "Ollama" then
-                        responseText = data.response or "Cevap alınamadı."
-                    elseif AI_CONFIG.Provider == "LMStudio" then
-                        responseText = data.choices and data.choices[1] and data.choices[1].message and data.choices[1].message.content or "Cevap alınamadı."
-                    else
-                        responseText = "Bilinmeyen sağlayıcı."
-                    end
-
-                    if responseText == "" then responseText = "[Boş cevap]"
-
-                    -- AI mesajını güncelle
-                    ChatApi.EditMessage(aiMsg, responseText)
-
-                    -- HOOK: onAIResponse (AI cevabı geldi)
-                    if hooks.onAIResponse then
-                        hooks.onAIResponse(responseText, aiMsg)
-                    end
-                end)
-
-                return userMsg
-            end
-
-            -- ==============================================================
-            -- CHAT API (mevcut fonksiyonlar + hook desteği)
-            -- ==============================================================
-            local chatApi = {}
-            chatApi.SendMessage = function(type, msg)
-                if type == "AI" then
-                    return CreateMessage("AI", tostring(msg))
-                else
-                    return CreateMessage("User", tostring(msg))
-                end
-            end
-            chatApi.EditMessage = function(msgFrame, newText)
-                local maxWidth = math.min(ChatScroll.AbsoluteSize.X * 0.78, 360)
-                local textSize = TextService:GetTextSize(newText, Config.ChatTextSize, C.Font, Vector2.new(maxWidth - 28, 9999))
-                local bubbleH = textSize.Y + 22
-                local bubbleW = math.max(math.min(textSize.X + 28, maxWidth), 48)
-
-                msgFrame.Size = UDim2.new(1, 0, 0, bubbleH)
-
-                if type(newText) ~= "string" then return end
-                local Bubble = msgFrame:FindFirstChild("ChatBubble")
-                if not Bubble then return end
-                Bubble.Size = UDim2.new(0, bubbleW, 0, bubbleH)
-                local Lbl = Bubble:FindFirstChildOfClass("TextLabel")
-                if not Lbl then return end
-                local isUser = msgFrame:GetAttribute("Sender") == "User"
-
-                -- HOOK: onMessageEdit
-                if hooks.onMessageEdit then
-                    local oldText = Lbl.Text
-                    local modified = hooks.onMessageEdit(msgFrame, newText, oldText)
-                    if modified then newText = modified end
-                end
-
-                local slideStart = isUser
-                    and UDim2.new(1, 0, 0, 0)
-                    or UDim2.new(0, -30, 0, 0)
-                Bubble.Position = slideStart
-                Bubble.BackgroundTransparency = 1
-
-                TweenService:Create(Bubble, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    Position = isUser and UDim2.new(1, -bubbleW, 0, 0) or UDim2.new(0, 0, 0, 0),
-                    BackgroundTransparency = 0,
-                }):Play()
-
-                if not isUser and Config.TypewriterActive then
-                    task.spawn(function()
-                        task.wait(0.1)
-                        for i = 1, #newText do
-                            Lbl.Text = string.sub(newText, 1, i)
-                            task.wait(0.011)
+                    local function AddHook(name, func)
+                        if hooks[name] ~= nil then
+                            hooks[name] = func
                         end
-                    end)
-                else
-                    Lbl.Text = newText
-                    Lbl.TextTransparency = 1
-                    TweenService:Create(Lbl, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
+                    end
+
+                    -- ==============================================================
+                    -- SEND MESSAGE (Kullanıcı mesajını oluşturur ve hook'u çağırır)
+                    -- ==============================================================
+                    local function SendMessage()
+                        local msg = TextBox.Text
+                        if msg == "" then return end
+                        TextBox.Text = ""
+
+                        local userMsg = CreateMessage("User", msg)
+
+                        if hooks.onMessageSend then
+                            task.spawn(function()
+                                hooks.onMessageSend(userMsg, msg)
+                            end)
+                        end
+
+                        return userMsg
+                    end
+
+                    SendBtn.MouseButton1Click:Connect(SendMessage)
+                    TextBox.FocusLost:Connect(function(enter) if enter then SendMessage() end end)
+
+                    -- ==============================================================
+                    -- CHAT API
+                    -- ==============================================================
+                    local chatApi = {}
+                    chatApi.SendMessage = function(sender, text)
+                        if sender == "AI" then
+                            return CreateMessage("AI", tostring(text))
+                        else
+                            return CreateMessage("User", tostring(text))
+                        end
+                    end
+                    chatApi.EditMessage = function(msgFrame, newText)
+                        local maxWidth = math.min(ChatScroll.AbsoluteSize.X * 0.78, 360)
+                        local textSize = TextService:GetTextSize(newText, Config.ChatTextSize, C.Font, Vector2.new(maxWidth - 28, 9999))
+                        local bubbleH = textSize.Y + 22
+                        local bubbleW = math.max(math.min(textSize.X + 28, maxWidth), 48)
+
+                        msgFrame.Size = UDim2.new(1, 0, 0, bubbleH)
+
+                        local Bubble = msgFrame:FindFirstChild("ChatBubble")
+                        if not Bubble then return end
+                        Bubble.Size = UDim2.new(0, bubbleW, 0, bubbleH)
+                        local Lbl = Bubble:FindFirstChildOfClass("TextLabel")
+                        if not Lbl then return end
+                        local isUser = msgFrame:GetAttribute("Sender") == "User"
+
+                        -- Hook: onMessageEdit
+                        if hooks.onMessageEdit then
+                            local oldText = Lbl.Text
+                            local modified = hooks.onMessageEdit(msgFrame, newText, oldText)
+                            if modified then newText = modified end
+                        end
+
+                        local slideStart = isUser
+                            and UDim2.new(1, 0, 0, 0)
+                            or UDim2.new(0, -30, 0, 0)
+                        Bubble.Position = slideStart
+                        Bubble.BackgroundTransparency = 1
+
+                        TweenService:Create(Bubble, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                            Position = isUser and UDim2.new(1, -bubbleW, 0, 0) or UDim2.new(0, 0, 0, 0),
+                            BackgroundTransparency = 0,
+                        }):Play()
+
+                        if not isUser and Config.TypewriterActive then
+                            task.spawn(function()
+                                task.wait(0.1)
+                                for i = 1, #newText do
+                                    Lbl.Text = string.sub(newText, 1, i)
+                                    task.wait(0.011)
+                                end
+                            end)
+                        else
+                            Lbl.Text = newText
+                            Lbl.TextTransparency = 1
+                            TweenService:Create(Lbl, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
+                        end
+                    end
+                    chatApi.DeleteMessage = function(msgFrame)
+                        if hooks.onMessageDelete then
+                            hooks.onMessageDelete(msgFrame)
+                        end
+
+                        local isUser = msgFrame:GetAttribute("Sender") == "User"
+                        local Bubble = msgFrame:FindFirstChild("ChatBubble")
+                        if not Bubble then return end
+
+                        local targetPos = isUser and UDim2.fromScale(1.5,0) or UDim2.fromScale(-1.5,0)
+                        local tween = TweenService:Create(Bubble, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                            Position = Bubble.Position + targetPos,
+                            BackgroundTransparency = 1,
+                        })
+                        tween:Play()
+                        tween.Completed:Once(function()
+                            msgFrame:Destroy()
+                        end)
+                    end
+                    chatApi.AddHook = AddHook
+
+                    -- Varsayılan hoşgeldin mesajları
+                    CreateMessage("AI", [[System online. Chamber Protocol v2.0 — all modules stabilized.]])
+                    CreateMessage("AI", [[<b><font color="#]].. C.Accent:ToHex() ..[[">Ready for custom AI integration via hooks.</font></b>]])
+
+                    return chatApi
                 end
-            end
-            chatApi.DeleteMessage = function(msgFrame)
-                -- HOOK: onMessageDelete
-                if hooks.onMessageDelete then
-                    hooks.onMessageDelete(msgFrame)
-                end
-
-                local isUser = msgFrame:GetAttribute("Sender") == "User"
-                local Bubble = msgFrame:FindFirstChild("ChatBubble")
-                if not Bubble then return end
-
-                local targetPos = isUser and UDim2.fromScale(1.5,0) or UDim2.fromScale(-1.5,0)
-                local tween = TweenService:Create(Bubble, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    Position = Bubble.Position + targetPos,
-                    BackgroundTransparency = 1,
-                })
-                tween:Play()
-                tween.Completed:Once(function()
-                    msgFrame:Destroy()
-                end)
-            end
-
-            -- Hook ekleme fonksiyonlarını API'ye ekle
-            chatApi.AddHook = AddHook
-
-            -- Kullanıcı mesaj gönderme işlemini API'ye bağla (buton ve enter için)
-            SendBtn.MouseButton1Click:Connect(SendMessage)
-            TextBox.FocusLost:Connect(function(enter) if enter then SendMessage() end end)
-
-            -- Varsayılan karşılama mesajları (opsiyonel, sadece AI otomatik devre dışı değilse)
-            if not disableAI then
-                CreateMessage("AI", [[System online. Chamber Protocol v2.0 — all modules stabilized.]])
-                CreateMessage("AI", [[<b><font color="#]].. C.Accent:ToHex() ..[[">For maximum AI performance, please test your executor first.</font></b>]])
-            end
-
-            return chatApi
-        end
 
 		function Elements:AddScriptEditor(filename)
 			ScrollFrame:Destroy()
@@ -1673,7 +1565,7 @@ function EliteLib:CreateWindow(titleText, subtitleText)
 end
 
 -- ==============================================================
--- INTERFACE STRUCTURE
+-- INTERFACE STRUCTURE (KÜTÜPHANE DIŞINDA ÇALIŞACAK)
 -- ==============================================================
 local Window = EliteLib:CreateWindow("// CHAMBER", "Neural Interface v2.0  |  STABLE BUILD")
 local SettingsTab = Window:CreateTab("Settings")
@@ -2525,5 +2417,4 @@ end)
 local EditorTab = Window:CreateTab("Editor")
 EditorTab:AddScriptEditor(CHAMBER_DIR.."/myscript.luau")
 
-	
 return Window

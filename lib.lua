@@ -2377,3 +2377,6 @@ end)
 
 local EditorTab = Window:CreateTab("Editor")
 EditorTab:AddScriptEditor(CHAMBER_DIR.."/myscript.luau")
+
+	
+return Window
